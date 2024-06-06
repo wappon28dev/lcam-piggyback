@@ -1,0 +1,47 @@
+name: cloudflare
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ (github.ref == 'refs/heads/prod' && 'production') || 'preview' }}
+    if: contains(github.event.head_commit.message, '[skip ci]') == false
+    env:
+      MODE: ${{ (github.ref == 'refs/heads/prod' && 'production') || 'preview' }}
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📸 Calculate commit hash
+        id: sha
+        uses: pr-mpt/actions-commit-hash@v3
+
+      - name: 🔨 Prepare Bun environment
+        uses: oven-sh/setup-bun@v1
+
+      - name: 🎉 Install project dependencies
+        run: bun i
+
+      - name: 🚀 Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
+          command: "deploy --minify src/index.ts --env ${{ env.MODE }}"
+          # NOTE: これは secrets にしか適用されない.  command の env は引数で渡す. 🤔
+          environment: ${{ env.MODE }}
+          secrets: |
+            MODE
+            WEBHOOK_DISCORD_PUBLIC_0
+            WEBHOOK_DISCORD_PRIVATE_0
+        env:
+          MODE: ${{ env.MODE }}
+          WEBHOOK_DISCORD_PUBLIC_0: ${{ secrets.WEBHOOK_DISCORD_PUBLIC_0 }}
+          WEBHOOK_DISCORD_PRIVATE_0: ${{ secrets.WEBHOOK_DISCORD_PRIVATE_0 }}

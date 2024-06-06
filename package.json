@@ -1,0 +1,20 @@
+{
+  "name": "lcam-piggyback",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts"
+  },
+  "dependencies": {
+    "@cloudflare/pages-plugin-mailchannels": "^0.1.2",
+    "@hono/zod-validator": "^0.2.0",
+    "hono": "^4.0.9",
+    "postal-mime": "^2.2.5",
+    "ts-pattern": "^5.1.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "wrangler": "^3.31.0"
+  }
+}
