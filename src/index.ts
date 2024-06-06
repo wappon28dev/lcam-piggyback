@@ -101,18 +101,26 @@ const email: EmailExportedHandler<Env> = async (message, env, ctx) => {
   const { WEBHOOK_DISCORD_PUBLIC_0: pub, WEBHOOK_DISCORD_PRIVATE_0: priv } =
     env;
 
-  match(email.category)
-    .with("学内連絡", async () => {
-      await sendDiscordWebhook(email, from, now, pub);
-    })
-    .otherwise(async () => {
-      await sendDiscordWebhook(
-        { ...email, title: `! Received otherwise ! - ${email.title}` },
-        from,
-        now,
-        priv,
-      );
-    });
+  switch (email.category) {
+    case "学内連絡":
+      {
+        const res = await sendDiscordWebhook(email, from, now, pub);
+        console.log("res => ", JSON.stringify(res));
+      }
+      break;
+
+    default:
+      {
+        const res = await sendDiscordWebhook(
+          { ...email, title: `! Received otherwise ! - ${email.title}` },
+          from,
+          now,
+          priv,
+        );
+        console.log("res => ", JSON.stringify(res));
+      }
+      break;
+  }
 };
 
 export default { email };
