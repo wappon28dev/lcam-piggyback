@@ -10,10 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ (github.ref == 'refs/heads/prod' && 'production') || 'preview' }}
+      name: ${{ (github.ref == 'refs/heads/prod' && 'prod') || 'stg' }}
     if: contains(github.event.head_commit.message, '[skip ci]') == false
     env:
-      MODE: ${{ (github.ref == 'refs/heads/prod' && 'production') || 'preview' }}
+      MODE: ${{ (github.ref == 'refs/heads/prod' && 'prod') || 'stg' }}
 
     steps:
       - name: 📥 Checkout repository
@@ -29,19 +29,19 @@ jobs:
       - name: 🎉 Install project dependencies
         run: bun i
 
-      - name: 🚀 Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@2.0.0
-        with:
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
-          command: "deploy --minify src/index.ts --env ${{ env.MODE }}"
-          # NOTE: これは secrets にしか適用されない.  command の env は引数で渡す. 🤔
-          environment: ${{ env.MODE }}
-          secrets: |
-            MODE
-            WEBHOOK_DISCORD_PUBLIC_0
-            WEBHOOK_DISCORD_PRIVATE_0
-        env:
-          MODE: ${{ env.MODE }}
-          WEBHOOK_DISCORD_PUBLIC_0: ${{ secrets.WEBHOOK_DISCORD_PUBLIC_0 }}
-          WEBHOOK_DISCORD_PRIVATE_0: ${{ secrets.WEBHOOK_DISCORD_PRIVATE_0 }}
+      # - name: 🚀 Deploy to Cloudflare Workers
+      #   uses: cloudflare/wrangler-action@2.0.0
+      #   with:
+      #     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      #     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN_WORKERS }}
+      #     command: "deploy --minify src/index.ts --env ${{ env.MODE }}"
+      #     # NOTE: これは secrets にしか適用されない.  command の env は引数で渡す. 🤔
+      #     environment: ${{ env.MODE }}
+      #     secrets: |
+      #       MODE
+      #       WEBHOOK_DISCORD_PUBLIC_0
+      #       WEBHOOK_DISCORD_PRIVATE_0
+      #   env:
+      #     MODE: ${{ env.MODE }}
+      #     WEBHOOK_DISCORD_PUBLIC_0: ${{ secrets.WEBHOOK_DISCORD_PUBLIC_0 }}
+      #     WEBHOOK_DISCORD_PRIVATE_0: ${{ secrets.WEBHOOK_DISCORD_PRIVATE_0 }}

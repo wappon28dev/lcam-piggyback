@@ -1,4 +1,3 @@
-import type { Address } from "postal-mime";
 import type { DownloadedAttachment } from "./lcam";
 import type { NotificationInfo } from "./types/notification";
 import { match, P } from "ts-pattern";
@@ -13,18 +12,13 @@ function truncate(text: string, maxLength: number): string {
 
 export async function sendDiscordWebhook(
   info: NotificationInfo,
-  from: Address | undefined,
   acceptDate: Date,
   url: string,
   attachments?: DownloadedAttachment[],
+  isStg?: boolean,
 ): Promise<Response> {
   const unixTime = Math.floor(acceptDate.getTime() / 1000);
-
-  const fromText = match({ address: from?.address, name: from?.name })
-    .with({ address: P.string, name: P.string.minLength(1) }, ({ address, name }) => `from: ${address} | ${name}`)
-    .with({ address: P.string }, ({ address }) => `from: ${address}`)
-    .with({ name: P.string.minLength(1) }, ({ name }) => `from: ${name}`)
-    .otherwise(() => "from: <不明>");
+  const title = isStg === true ? `[stg] ${info.title}` : info.title;
 
   const attachmentText = match([info.etc.hasAttachment === true, info.etc.attachmentFailed === true])
     .with([true, true], () => "添付ファイルあり (取得失敗)")
@@ -43,12 +37,9 @@ export async function sendDiscordWebhook(
     content: null,
     embeds: [
       {
-        title: info.title,
+        title,
         description: truncate(info.content, MAX_DESCRIPTION_LENGTH),
         color: 14293625,
-        footer: {
-          text: fromText,
-        },
         fields: [
           {
             name: "通知カテゴリー",
@@ -72,6 +63,11 @@ export async function sendDiscordWebhook(
     ],
     attachments: [],
   };
+
+  if (!url || url.trim() === "") {
+    console.error("Discord webhook URL is empty, skipping sending");
+    return new Response("Discord webhook URL is not configured", { status: 500 });
+  }
 
   if (attachments != null && attachments.length > 0) {
     const formData = new FormData();
@@ -103,17 +99,21 @@ export async function sendDiscordWebhook(
 }
 
 /**
- * 管理用 Webhook 等へアラートメッセージを送信する
+ * 添付ファイル取得失敗などの重大アラートを Discord Webhook へ送信する
  */
-export async function sendDiscordAlert(
-  url: string,
-  content: string,
-): Promise<Response> {
+export async function sendDiscordAlert(url: string, message: string): Promise<Response> {
+  if (!url || url.trim() === "") {
+    console.error("Discord alert webhook URL is empty, skipping sending");
+    return new Response("Discord alert webhook URL is not configured", { status: 500 });
+  }
+
   return await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({
+      content: message,
+    }),
   });
 }

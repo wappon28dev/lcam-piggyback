@@ -312,7 +312,6 @@ describe("L-Cam パーサー機能", () => {
               attachmentFailed: true,
             },
           },
-          undefined,
           new Date(),
           "https://example.com/webhook",
         );
@@ -322,6 +321,39 @@ describe("L-Cam パーサー機能", () => {
           const infoField = captured.body.embeds[0]?.fields.find((f: { name: string; value: string }) => f.name === "情報");
           expect(infoField?.value).toBe("添付ファイルあり (取得失敗)");
         }
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it("isStg が true の場合にタイトルに [stg] が付与されること", async () => {
+      type DiscordPayload = { embeds: Array<{ title: string }> };
+      const captured: { body: DiscordPayload | null } = { body: null };
+
+      const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (
+        _url: string | URL | Request,
+        init?: RequestInit,
+      ) => {
+        captured.body = JSON.parse(init?.body as string) as DiscordPayload;
+        return new Response("ok", { status: 200 });
+      }) as unknown as typeof fetch);
+
+      try {
+        await sendDiscordWebhook(
+          {
+            category: "学内連絡",
+            kind: "通知",
+            title: "テスト連絡",
+            content: "本文",
+            etc: {},
+          },
+          new Date(),
+          "https://example.com/webhook",
+          undefined,
+          true,
+        );
+
+        expect(captured.body?.embeds[0]?.title).toBe("[stg] テスト連絡");
       } finally {
         fetchSpy.mockRestore();
       }
@@ -350,6 +382,26 @@ describe("L-Cam パーサー機能", () => {
       } finally {
         fetchSpy.mockRestore();
       }
+    });
+
+    it("sendDiscordWebhook は URL が空の場合に 500 を返すこと", async () => {
+      const res = await sendDiscordWebhook(
+        {
+          category: "学内連絡",
+          kind: "通知",
+          title: "テスト連絡",
+          content: "本文",
+          etc: {},
+        },
+        new Date(),
+        "",
+      );
+      expect(res.status).toBe(500);
+    });
+
+    it("sendDiscordAlert は URL が空の場合に 500 を返すこと", async () => {
+      const res = await sendDiscordAlert("", "アラートメッセージ");
+      expect(res.status).toBe(500);
     });
   });
 });

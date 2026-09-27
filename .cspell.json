@@ -1,14 +1,20 @@
 {
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
   "words": [
+    "arktype",
+    "byethrow",
     "classcontact",
     "commoncontact",
+    "consts",
+    "healthz",
+    "jitless",
     "JSESSIONID",
     "jsessionid",
     "lamyapp",
     "lcam",
     "midoku",
     "portalv",
+    "praha",
     "taglib",
     "TOEIC"
   ]

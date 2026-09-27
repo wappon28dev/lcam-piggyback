@@ -1,2 +1,29 @@
 name = "lcam-piggyback"
+account_id = "353ad16a4d481c823300a0efba32d724"
 compatibility_date = "2023-12-01"
+main = "src/index.ts"
+
+[observability]
+enabled = true
+
+[env.prod.vars]
+MODE = "prod"
+
+[[routes]]
+pattern = "lcam-piggyback.wappon28.dev"
+custom_domain = true
+
+[previews.observability]
+enabled = false
+head_sampling_rate = 1
+
+[previews.observability.logs]
+enabled = false
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[previews.observability.traces]
+enabled = false
+head_sampling_rate = 1
+persist = true

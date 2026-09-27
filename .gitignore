@@ -180,3 +180,4 @@ dist
 .dev.vars
 .dev.vars.*
 src/lib/lcam.ts
+.wrangler/
