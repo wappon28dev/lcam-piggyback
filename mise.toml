@@ -1,0 +1,15 @@
+[tools]
+aube = "2.4.0"
+bun = "1.4.2"
+cspell = "10.3.4"
+node = "24.21.0"
+"npm:lefthook" = "2.1.12"
+
+
+[tasks.bootstrap]
+run = [
+  "cp ./.vscode/settings.example.json ./.vscode/settings.json",
+  # "cp ./.env.example.dev ./.env.dev",
+  "lefthook install",
+  "aube i",
+]
