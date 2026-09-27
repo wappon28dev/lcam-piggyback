@@ -1,4 +1,5 @@
 import type { Address } from "postal-mime";
+import type { DownloadedAttachment } from "./lcam";
 import type { NotificationInfo } from "./types/notification";
 import { match, P } from "ts-pattern";
 
@@ -15,6 +16,7 @@ export async function sendDiscordWebhook(
   from: Address | undefined,
   acceptDate: Date,
   url: string,
+  attachments?: DownloadedAttachment[],
 ): Promise<Response> {
   const unixTime = Math.floor(acceptDate.getTime() / 1000);
 
@@ -24,11 +26,14 @@ export async function sendDiscordWebhook(
     .with({ name: P.string.minLength(1) }, ({ name }) => `from: ${name}`)
     .otherwise(() => "from: <不明>");
 
-  const infoDetails = match([info.etc.hasAttachment === true, info.etc.hasGarbled === true])
-    .with([true, true], () => "添付ファイルあり | 通知内容が壊れているかも？")
+  const attachmentText = match([info.etc.hasAttachment === true, info.etc.attachmentFailed === true])
+    .with([true, true], () => "添付ファイルあり (取得失敗)")
     .with([true, false], () => "添付ファイルあり")
-    .with([false, true], () => "通知内容が壊れているかも？")
-    .otherwise(() => "");
+    .otherwise(() => null);
+
+  const infoDetails = [attachmentText, info.etc.hasGarbled === true ? "通知内容が壊れているかも？" : null]
+    .filter((v): v is string => v != null)
+    .join(" | ");
 
   const infoFields = match(infoDetails)
     .with(P.string.minLength(1), (val) => [{ name: "情報", value: val }])
@@ -68,11 +73,47 @@ export async function sendDiscordWebhook(
     attachments: [],
   };
 
+  if (attachments != null && attachments.length > 0) {
+    const formData = new FormData();
+    const payload = {
+      ...body,
+      attachments: attachments.map((att, idx) => ({
+        id: idx,
+        filename: att.filename,
+      })),
+    };
+    formData.append("payload_json", JSON.stringify(payload));
+    attachments.forEach((att, idx) => {
+      formData.append(`files[${idx}]`, new Blob([att.data]), att.filename);
+    });
+
+    return await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+  }
+
   return await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
+  });
+}
+
+/**
+ * 管理用 Webhook 等へアラートメッセージを送信する
+ */
+export async function sendDiscordAlert(
+  url: string,
+  content: string,
+): Promise<Response> {
+  return await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content }),
   });
 }

@@ -177,3 +177,6 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node,macos
 
 # .vscode/settings.json
+.dev.vars
+.dev.vars.*
+src/lib/lcam.ts

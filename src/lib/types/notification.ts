@@ -20,5 +20,6 @@ export type NotificationInfo = {
   etc: {
     hasAttachment?: boolean;
     hasGarbled?: boolean;
+    attachmentFailed?: boolean;
   };
 };
