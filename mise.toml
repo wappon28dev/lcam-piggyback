@@ -3,6 +3,7 @@ aube = "2.4.0"
 bun = "1.4.2"
 cspell = "10.3.4"
 node = "24.21.0"
+"npm:@colbymchenry/codegraph" = "latest"
 "npm:lefthook" = "2.1.12"
 
 
