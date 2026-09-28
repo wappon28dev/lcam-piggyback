@@ -4,7 +4,8 @@ import { $app } from "./index";
 const TEST_ENV = {
   WEBHOOK_DISCORD_PUBLIC_0: "",
   WEBHOOK_DISCORD_PRIVATE_0: "",
-  MELLON_COOKIE: "",
+  LCAM_USER_ID: "test-user",
+  LCAM_APP_TOKEN: "test-token",
   BEARER_TOKEN: "secret-test-token",
   MODE: "stg" as const,
 };

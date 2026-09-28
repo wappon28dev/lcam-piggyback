@@ -1,4 +1,5 @@
 WEBHOOK_DISCORD_PUBLIC_0 = "xxxxxxxxxxxx"
 WEBHOOK_DISCORD_PRIVATE_0 = "xxxxxxxxxxxx"
-MELLON_COOKIE = "xxxxxxxxxxxx"
+LCAM_USER_ID = "xxxxxxxx"
+LCAM_APP_TOKEN = "xxxxxxxx"
 AUTH_TOKEN = "xxxxxxxx"

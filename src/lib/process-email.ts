@@ -14,6 +14,7 @@ export type ProcessEmailResult = {
   attachmentFailed: boolean;
   downloadedAttachments: string[];
   discordStatus: number;
+  errorDetail?: string;
 };
 
 /**
@@ -33,7 +34,8 @@ export async function processEmail(
   const {
     WEBHOOK_DISCORD_PUBLIC_0: pub,
     WEBHOOK_DISCORD_PRIVATE_0: priv,
-    MELLON_COOKIE: mellon,
+    LCAM_USER_ID: userId,
+    LCAM_APP_TOKEN: appToken,
   } = env;
 
   const { webhookUrl, notification } = match(parsed.category)
@@ -48,16 +50,19 @@ export async function processEmail(
 
   let attachments: DownloadedAttachment[] = [];
   let attachmentFailed = false;
+  let errorDetail: string | undefined;
 
   if (parsed.etc.hasAttachment === true) {
     try {
-      attachments = await fetchLcamAttachments(parsed, { mellon });
+      attachments = await fetchLcamAttachments(parsed, { userId, appToken });
       if (attachments.length === 0) {
         attachmentFailed = true;
+        errorDetail = "attachments array is empty (no items matched)";
       }
     } catch (e) {
       console.error("Failed to fetch L-Cam attachments:", e);
       attachmentFailed = true;
+      errorDetail = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     }
   }
 
@@ -81,7 +86,7 @@ export async function processEmail(
     try {
       await sendDiscordAlert(
         priv,
-        `⚠️ **【L-Cam 添付ファイル取得失敗】**\n「${notification.title}」(${notification.category}) の添付ファイルの自動取得に失敗しました。\nMELLON_COOKIE のセッション切れ等の可能性があります。Cookie の再設定を確認してください。`,
+        `⚠️ **【L-Cam 添付ファイル取得失敗】**\n「${notification.title}」(${notification.category}) の添付ファイルの自動取得に失敗しました。\nトークンの期限切れ等の可能性があります。scripts/get-token.ts による再発行を確認してください。`,
       );
     } catch (e) {
       console.error("Failed to send Discord failure alert:", e);
@@ -95,5 +100,6 @@ export async function processEmail(
     attachmentFailed,
     downloadedAttachments: attachments.map((a) => a.filename),
     discordStatus: res.status,
+    errorDetail,
   };
 }

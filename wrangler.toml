@@ -2,16 +2,27 @@ name = "lcam-piggyback"
 account_id = "353ad16a4d481c823300a0efba32d724"
 compatibility_date = "2023-12-01"
 main = "src/index.ts"
+workers_dev = false
+preview_urls = false
+
+[placement]
+hostname = "lcam.aitech.ac.jp"
+
+[[routes]]
+zone_name = "wappon28.dev"
+enabled = true
+previews_enabled = true
+pattern = "lcam-piggyback.wappon28.dev"
+custom_domain = true
+
+[vars]
+MODE = "prod"
+
+[previews.vars]
+MODE = "stg"
 
 [observability]
 enabled = true
-
-[env.prod.vars]
-MODE = "prod"
-
-[[routes]]
-pattern = "lcam-piggyback.wappon28.dev"
-custom_domain = true
 
 [previews.observability]
 enabled = false

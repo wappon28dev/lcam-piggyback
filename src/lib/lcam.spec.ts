@@ -1,6 +1,7 @@
 import { describe, expect, it, spyOn } from "bun:test";
 import { sendDiscordAlert, sendDiscordWebhook } from "./discord";
 import {
+  authenticate,
   extractStrutsToken,
   findMatchingClassContact,
   findMatchingCommonContact,
@@ -402,6 +403,122 @@ describe("L-Cam パーサー機能", () => {
     it("sendDiscordAlert は URL が空の場合に 500 を返すこと", async () => {
       const res = await sendDiscordAlert("", "アラートメッセージ");
       expect(res.status).toBe(500);
+    });
+  });
+
+  describe("authenticate (アプリトークン認証)", () => {
+    it("正常なレスポンスでセッション Cookie を取得できること", async () => {
+      const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (
+        url: string | URL | Request,
+      ) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("/portalv2/sp")) {
+          return new Response("", {
+            status: 200,
+            headers: { "Set-Cookie": "JSESSIONID=test_session_id; Path=/portalv2; HttpOnly" },
+          });
+        }
+        if (urlStr.includes("/smartPhoneLogin/")) {
+          return new Response("<html><head><title>メニュー</title></head><body>メニュー</body></html>", {
+            status: 200,
+            headers: { "Content-Type": "text/html;charset=utf-8" },
+          });
+        }
+        return new Response("Not Found", { status: 404 });
+      }) as unknown as typeof fetch);
+
+      try {
+        const cookie = await authenticate(
+          { userId: "test_user", appToken: "test_app_token" },
+          "https://example.com",
+        );
+        expect(cookie).toBe("JSESSIONID=test_session_id; L-CamApp=Y");
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it("/portalv2/sp で JSESSIONID が取得できない場合はエラーになること", async () => {
+      const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async () =>
+        new Response("", { status: 200, headers: {} })) as unknown as typeof fetch);
+
+      try {
+        let err: Error | null = null;
+        try {
+          await authenticate({ userId: "test_user", appToken: "test_app_token" }, "https://example.com");
+        } catch (e) {
+          err = e as Error;
+        }
+        expect(err?.message).toContain("fresh JSESSIONID not found");
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it("smartPhoneLogin で JSON エラーが返ってきた場合はエラーになること", async () => {
+      const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (
+        url: string | URL | Request,
+      ) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("/portalv2/sp")) {
+          return new Response("", {
+            status: 200,
+            headers: { "Set-Cookie": "JSESSIONID=test_session_id; Path=/portalv2; HttpOnly" },
+          });
+        }
+        if (urlStr.includes("/smartPhoneLogin/")) {
+          return new Response(JSON.stringify({ errorMessage: "認証に失敗しました。", status: "fail" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response("Not Found", { status: 404 });
+      }) as unknown as typeof fetch);
+
+      try {
+        let err: Error | null = null;
+        try {
+          await authenticate({ userId: "test_user", appToken: "test_app_token" }, "https://example.com");
+        } catch (e) {
+          err = e as Error;
+        }
+        expect(err?.message).toContain("認証に失敗しました。");
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it("smartPhoneLogin でメニュー画面以外の HTML が返ってきた場合はエラーになること", async () => {
+      const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (
+        url: string | URL | Request,
+      ) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("/portalv2/sp")) {
+          return new Response("", {
+            status: 200,
+            headers: { "Set-Cookie": "JSESSIONID=test_session_id; Path=/portalv2; HttpOnly" },
+          });
+        }
+        if (urlStr.includes("/smartPhoneLogin/")) {
+          return new Response("<html><head><title>総合ポータルシステム</title></head><body><li>システムエラーが発生しました</li></body></html>", {
+            status: 200,
+            headers: { "Content-Type": "text/html;charset=utf-8" },
+          });
+        }
+        return new Response("Not Found", { status: 404 });
+      }) as unknown as typeof fetch);
+
+      try {
+        let err: Error | null = null;
+        try {
+          await authenticate({ userId: "test_user", appToken: "test_app_token" }, "https://example.com");
+        } catch (e) {
+          err = e as Error;
+        }
+        expect(err?.message).toContain("システムエラーが発生しました");
+      } finally {
+        fetchSpy.mockRestore();
+      }
     });
   });
 });

@@ -179,5 +179,6 @@ dist
 # .vscode/settings.json
 .dev.vars
 .dev.vars.*
+scripts/get-token.ts
 src/lib/lcam.ts
 .wrangler/
